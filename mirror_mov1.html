@@ -1,0 +1,235 @@
+<style>
+body {
+    background-color: #111111;
+}
+#container a {
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    text-align: center;
+    padding: 5px;
+    top: 20px;
+    left: 20px;
+    color: white;
+    font-family:"Helvetica";
+    font-size: 12px;
+    background-color: #7F7F7F;
+    opacity: 0.5;
+}
+</style>
+
+
+<body>
+    <div id="container">
+        <a>
+            <span id="animate">Animate: ON - OFF</span>
+        </a>
+    </div>
+</body>
+
+<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.min.js"></script>
+<script src="./js/OrbitControls.js"></script>
+<script src="./js/FlatMirror.js"></script>
+
+
+<script>
+// Global variables
+
+// scene size
+var WIDTH = 800;
+var HEIGHT = 600;
+
+// camera
+var VIEW_ANGLE = 45;
+var ASPECT = WIDTH / HEIGHT;
+var NEAR = 1;
+var FAR = 500;
+
+// scene
+var camera;
+var renderer;
+var scene;
+
+var cameraControls;
+
+var verticalMirror, groundMirror, sphereCapMirror;
+var sphereGroup;
+
+var doAnimate = true;
+
+document.getElementById("animate").onclick =
+    function() {
+        doAnimate = !doAnimate;
+};
+
+function init() {
+
+    //RENDERER
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(WIDTH, HEIGHT);
+
+    renderer.autoClear = true;
+    renderer.setClearColor(0x000000, 1.0);
+
+    //SCENE
+    scene = new THREE.Scene();
+
+    //CAMERA
+    camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+    camera.position.set(0, 75, 160);
+
+    cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+    cameraControls.target.set(0.0, 40.0, 0.0);
+    cameraControls.autoRotate = !true;
+    cameraControls.maxDistance = 400;
+    cameraControls.minDistance = 10;
+    cameraControls.update();
+
+    var container = document.getElementById('container');
+    container.appendChild(renderer.domElement);
+}
+
+function fillScene() {
+
+    var planeGeo = new THREE.PlaneGeometry(100.1, 100.1);
+
+    //MIRORR planes
+    groundMirror = new THREE.FlatMirror(renderer, camera, {
+        clipBias: 0.003,
+        textureWidth: 800,
+        textureHeight: 600,
+        color: 0x777777
+    });
+
+    var mirrorMesh = new THREE.Mesh(planeGeo, groundMirror.material);
+    mirrorMesh.add(groundMirror);
+    mirrorMesh.rotateX(-Math.PI / 2);
+    scene.add(mirrorMesh);
+
+    verticalMirror = new THREE.FlatMirror(renderer, camera, {
+        clipBias: 0.003,
+        textureWidth: 800,
+        textureHeight: 600,
+        color: 0x889999
+    });
+
+    var verticalMirrorMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 40), verticalMirror.material);
+    verticalMirrorMesh.add(verticalMirror);
+    verticalMirrorMesh.position.y = 25;
+    verticalMirrorMesh.position.z = -45;
+    scene.add(verticalMirrorMesh);
+
+    // some decorative spheres
+    sphereCapMirror = new THREE.FlatMirror(renderer, camera, {
+        clipBias: 0.001,
+        color: 0x784564
+    });
+    var sphereCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 15 * Math.cos(Math.PI / 180 * 30), 0.1, 24, 1), sphereCapMirror.material);
+
+    sphereCap.add(sphereCapMirror);
+    sphereCapMirror.position.y = 0.05;
+    sphereCapMirror.rotation.x = -Math.PI / 2;
+    sphereCap.position.y = -15 * Math.sin(Math.PI / 180 * 30) - 0.05;
+    sphereCap.rotateX(-Math.PI);
+
+    var halfSphere = new THREE.Mesh(new THREE.SphereGeometry(15, 24, 24, Math.PI / 2, Math.PI * 2.0, 0, Math.PI / 180 * 120), new THREE.MeshPhongMaterial({
+        color: 0x673454,
+        ambient: 0xFFFFFF,
+        emissive: 0x111111
+    }));
+    halfSphere.add(sphereCap);
+    halfSphere.rotateX(-Math.PI / 180 * 135);
+    halfSphere.rotateZ(-Math.PI / 180 * 20);
+    halfSphere.position.y = 7.5 + 15 * Math.sin(Math.PI / 180 * 30);
+
+    sphereGroup = new THREE.Object3D();
+    sphereGroup.add(halfSphere)
+    scene.add(sphereGroup);
+
+    var smallSphere = new THREE.Mesh(new THREE.SphereGeometry(5, 4, 4), new THREE.MeshBasicMaterial({
+        color: 0x7f7f7f,
+        wireframe: true
+    }));
+    smallSphere.position.set(-45, 4.9, 45);
+    scene.add(smallSphere);
+
+    // walls
+    var planeTop = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+        color: 0xffffff
+    }));
+    planeTop.position.y = 100;
+    planeTop.rotateX(Math.PI / 2);
+    scene.add(planeTop);
+
+    var planeBack = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+        color: 0xffffff
+    }));
+    planeBack.position.z = -50;
+    planeBack.position.y = 50;
+    scene.add(planeBack);
+
+    var planeFront = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+        color: 0x7f7fff
+    }));
+    planeFront.position.z = 50;
+    planeFront.position.y = 50;
+    planeFront.rotateY(Math.PI);
+    scene.add(planeFront);
+
+    var planeRight = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+        color: 0x00ff00
+    }));
+    planeRight.position.x = 50;
+    planeRight.position.y = 50;
+    planeRight.rotateY(-Math.PI / 2);
+    scene.add(planeRight);
+
+    var planeLeft = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+        color: 0xff0000
+    }));
+    planeLeft.position.x = -50;
+    planeLeft.position.y = 50;
+    planeLeft.rotateY(Math.PI / 2);
+    scene.add(planeLeft);
+
+    //lights
+    var mainLight = new THREE.PointLight(0xcccccc, 1.2, 250);
+    mainLight.position.y = 80.0;
+    scene.add(mainLight);
+
+    var greenLight = new THREE.PointLight(0x00ff00, 30.0, 540);
+    greenLight.position.set(550.0, 50.0, 0.0);
+    scene.add(greenLight);
+
+    var redLight = new THREE.PointLight(0xff0000, 30.0, 540);
+    redLight.position.set(-550.0, 50.0, 0.0);
+    scene.add(redLight);
+}
+
+
+function render() {
+    //render (update) the mirrors
+    groundMirror.renderWithMirror(verticalMirror);
+    verticalMirror.renderWithMirror(groundMirror);
+    sphereCapMirror.renderWithMirror(verticalMirror);
+
+    renderer.render(scene, camera);
+}
+
+function update() {
+
+    window.requestAnimationFrame(update);
+
+    if (doAnimate) {
+        sphereGroup.rotation.y -= 0.002;
+    }
+
+    cameraControls.update();
+
+    render();
+}
+
+init();
+fillScene();
+update();
+</script>
